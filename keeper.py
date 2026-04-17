@@ -39,7 +39,7 @@ from dateutil.parser import parse as parse_date
 COLORS = {
     "bg": "#1e1e2e",
     "surface": "#313244",
-    "primary": "#89b4fa",
+    "primary": "#1a1a1a",
     "secondary": "#a6e3a1",  # доходы
     "tertiary": "#f38ba8",    # расходы
     "text": "#cdd6f4",
@@ -105,7 +105,7 @@ class AddTransactionModal(ModalScreen[dict | None]):
 
                 with Horizontal(id="modal-buttons"):
                     yield Button("Отмена", variant="default", id="cancel-btn")
-                    yield Button("Сохранить", variant="primary", id="save-btn")
+                    yield Button("Сохранить", variant="default", id="save-btn")
 
     def action_cancel(self) -> None:
         self.dismiss(None)
@@ -187,7 +187,7 @@ class SplitModal(ModalScreen[str | None]):
 
                 with Horizontal(id="modal-buttons"):
                     yield Button("Отмена", variant="default", id="cancel-btn")
-                    yield Button("Создать", variant="primary", id="create-btn")
+                    yield Button("Создать", variant="default", id="create-btn")
 
     def action_cancel(self) -> None:
         self.dismiss(None)
@@ -222,11 +222,15 @@ class KeeperApp(App):
 
     TITLE = "KEEPER"
     import random
-    SUB_TITLE = random.choice(list(open('splash', 'r', encoding='utf-8'))).strip()
+    #check if splash exists
+    SUB_TITLE = random.choice(list(open('splash', 'r', encoding='utf-8'))).strip() if os.path.exists('splash') else "Теперь в одном файлике!"
 
     CSS = """
+    #type-switch{
+        border: solid $surface;
+    }
     Screen {
-        background: $surface;
+        background: #0a0a0a;
     }
 
     #main-container {
@@ -237,26 +241,26 @@ class KeeperApp(App):
     #file-info {
         height: 3;
         padding: 1 2;
-        background: $primary;
-        color: #1e1e2e;
+        background: #101010;
+        color: #FFCC00;
         text-style: bold;
         margin-bottom: 1;
     }
 
     #transaction-table {
         height: 1fr;
-        background: #1e1e2e;
-        border: solid $border;
+        background: #101010;
+        border: solid #000000;
     }
 
     DataTable {
-        background: #1e1e2e;
+        background: #222222;
         color: $text;
     }
 
     DataTable > .datatable--header {
-        background: $primary;
-        color: #1e1e2e;
+        background: #101010;
+        color: #FFCC00;
         text-style: bold;
     }
 
@@ -274,7 +278,7 @@ class KeeperApp(App):
         margin-top: 1;
         padding: 1 2;
         background: #1e1e2e;
-        border: solid $border;
+        border: solid #222222;
     }
 
     #totals-bar Label {
@@ -308,24 +312,25 @@ class KeeperApp(App):
     #modal-content {
         width: 60;
         height: auto;
-        background: $surface;
-        border: solid $primary;
+        background: #111111;
+        border: solid #ffcc00;
         padding: 2 3;
     }
 
     #modal-title {
         text-style: bold;
-        color: $primary;
+        color: #ffcc00;
         text-align: center;
         padding-bottom: 1;
     }
 
     #modal-content Label {
-        color: #a6adc8;
+        color: #ffcc00;
         margin-top: 1;
     }
 
     #modal-content Input {
+        border: solid $surface;
         width: 100%;
         margin-bottom: 1;
     }
@@ -375,9 +380,10 @@ class KeeperApp(App):
         height: 3;
         padding: 1 2;
         background: $primary;
-        color: #1e1e2e;
+        color: #FFCC00;
         text-align: center;
         text-style: bold;
+        background: #111111;
     }
 
     Footer {
@@ -429,6 +435,7 @@ class KeeperApp(App):
         yield Static("", id="custom-footer")
 
     def on_mount(self) -> None:
+        self.theme = "monokai"
         """Инициализация при запуске"""
         table = self.query_one("#transaction-table", DataTable)
         table.add_columns("Дата", "Название", "Сумма", "Тип")
