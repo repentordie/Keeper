@@ -230,7 +230,7 @@ class KeeperApp(App):
     }
 
     #main-container {
-        height: 100%;
+        height: 1fr;
         padding: 1 2;
     }
 
@@ -371,12 +371,17 @@ class KeeperApp(App):
     }
 
     #custom-footer {
+        dock: bottom;
         height: 3;
         padding: 1 2;
         background: $primary;
         color: #1e1e2e;
         text-align: center;
         text-style: bold;
+    }
+
+    Footer {
+        display: none;
     }
     """
 
@@ -413,13 +418,13 @@ class KeeperApp(App):
             yield Static("Файл: не выбран", id="file-info")
             yield DataTable(id="transaction-table")
 
-            with Horizontal(id="totals-bar"):
-                yield Label(f"Доходы: ", id="income-label")
-                yield Label("0.00", id="income-total")
-                yield Label(" | Расходы: ", id="expense-label")
-                yield Label("0.00", id="expense-total")
-                yield Label(" | Баланс: ", id="balance-label")
-                yield Label("0.00", id="balance-total")
+            #with Horizontal(id="totals-bar"):
+            #    yield Label(f"Доходы: ", id="income-label")
+            #    yield Label("0.00", id="income-total")
+            #    yield Label(" | Расходы: ", id="expense-label")
+            #    yield Label("0.00", id="expense-total")
+            #    yield Label(" | Баланс: ", id="balance-label")
+             #   yield Label("0.00", id="balance-total")
 
         yield Static("", id="custom-footer")
 
@@ -430,11 +435,14 @@ class KeeperApp(App):
         table.zebra_stripes = True
         table.focus()
 
+        # Инициализируем footer
+        self._update_footer(0.0)
+
         # Сначала пробуем открыть последний файл
         last_file = self._get_last_file()
         if last_file and last_file.exists():
             self.load_file(last_file)
-            self.notify(f"Открыт последний файл: {last_file.name}")
+            #self.notify(f"Открыт последний файл: {last_file.name}")
         else:
             # Если последнего файла нет, пробуем дефолтный
             default_file = Path("keeper.xlsx")
@@ -667,19 +675,19 @@ class KeeperApp(App):
         expense = sum(t.amount for t in self.transactions if t.type_ == "РАСХОД")
         balance = income - expense
 
-        self.query_one("#income-total", Label).update(f"{income:,.2f}")
-        self.query_one("#expense-total", Label).update(f"{expense:,.2f}")
-        self.query_one("#balance-total", Label).update(f"{balance:,.2f}")
+        #self.query_one("#income-total", Label).update(f"{income:,.2f}")
+        #self.query_one("#expense-total", Label).update(f"{expense:,.2f}")
+        #self.query_one("#balance-total", Label).update(f"{balance:,.2f}")
         self._update_footer(balance)
 
     def _update_footer(self, balance: float) -> None:
         """Обновить кастомный footer"""
         footer = self.query_one("#custom-footer", Static)
         balance_str = f"{balance:,.2f}"
-        balance_color = "[green]" if balance >= 0 else "[red]"
+        sign = "+" if balance >= 0 else ""
         footer.update(
             f"n — Новый  |  o — Открыть  |  a — Добавить  |  e — Edit  |  d — Удалить  |  "
-            f"s — Split  |  q — Выход     {balance_color}● Баланс: {balance_str}[/]"
+            f"s — Split  |  q — Выход     Баланс: {sign}{balance_str}"
         )
 
     def _update_file_info(self) -> None:
