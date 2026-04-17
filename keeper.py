@@ -6,6 +6,7 @@ TUI-приложение для ведения бизнеса в стиле neov
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import date, datetime
 from pathlib import Path
@@ -97,10 +98,10 @@ class AddTransactionModal(ModalScreen[dict | None]):
 
                 yield Label("Тип:", id="type-label")
                 with Horizontal(id="type-toggle"):
-                    yield Label("ДОХОД", id="income-label")
+                    yield Label("РАСХОД", id="income-label")
                     is_income = self.transaction.type_ == "IN" if self.transaction else True
                     yield Switch(value=is_income, id="type-switch")
-                    yield Label("РАСХОД", id="expense-label")
+                    yield Label("ДОХОД", id="expense-label")
 
                 with Horizontal(id="modal-buttons"):
                     yield Button("Отмена", variant="default", id="cancel-btn")
@@ -369,14 +370,13 @@ class KeeperApp(App):
         margin: 1 0;
     }
 
-    Footer {
+    #custom-footer {
+        height: 3;
+        padding: 1 2;
         background: $primary;
         color: #1e1e2e;
-    }
-
-    FooterKey {
-        background: #1e1e2e;
-        color: $text;
+        text-align: center;
+        text-style: bold;
     }
     """
 
@@ -404,6 +404,7 @@ class KeeperApp(App):
         self.current_file: Path | None = None
         self.transactions: list[Transaction] = []
         self.sheet_name = "Транзакции"
+        self.config_file = Path.home() / ".keeper_last_file.json"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -420,7 +421,7 @@ class KeeperApp(App):
                 yield Label(" | Баланс: ", id="balance-label")
                 yield Label("0.00", id="balance-total")
 
-        yield Footer()
+        yield Static("", id="custom-footer")
 
     def on_mount(self) -> None:
         """Инициализация при запуске"""
@@ -429,12 +430,18 @@ class KeeperApp(App):
         table.zebra_stripes = True
         table.focus()
 
-        # Попытаться открыть файл по умолчанию
-        default_file = Path("keeper.xlsx")
-        if default_file.exists():
-            self.load_file(default_file)
+        # Сначала пробуем открыть последний файл
+        last_file = self._get_last_file()
+        if last_file and last_file.exists():
+            self.load_file(last_file)
+            self.notify(f"Открыт последний файл: {last_file.name}")
         else:
-            self.notify("Создайте новый файл (n) или откройте существующий (o)")
+            # Если последнего файла нет, пробуем дефолтный
+            default_file = Path("keeper.xlsx")
+            if default_file.exists():
+                self.load_file(default_file)
+            else:
+                self.notify("Создайте новый файл (n) или откройте существующий (o)")
 
     def action_cursor_down(self) -> None:
         table = self.query_one("#transaction-table", DataTable)
@@ -576,11 +583,31 @@ class KeeperApp(App):
                 ws = wb[self.sheet_name]
 
             self.current_file = path
+            self._save_last_file(path)
             self._update_file_info()
             self.refresh_transactions()
 
         except Exception as e:
             self.notify(f"Ошибка загрузки файла: {e}", severity="error")
+
+    def _save_last_file(self, path: Path) -> None:
+        """Сохранить путь к последнему файлу"""
+        try:
+            with open(self.config_file, "w", encoding="utf-8") as f:
+                json.dump({"last_file": str(path)}, f)
+        except Exception:
+            pass  # Тихо игнорируем ошибки сохранения конфига
+
+    def _get_last_file(self) -> Path | None:
+        """Получить путь к последнему файлу"""
+        try:
+            if self.config_file.exists():
+                with open(self.config_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    return Path(data.get("last_file", ""))
+        except Exception:
+            pass
+        return None
 
     def refresh_transactions(self) -> None:
         """Обновить таблицу транзакций"""
@@ -615,18 +642,20 @@ class KeeperApp(App):
                 transaction = Transaction(date_str, name, amount, type_)
                 self.transactions.append(transaction)
 
-                # Добавляем в таблицу
-                type_style = "[green]ДОХОД[/green]" if type_ == "ДОХОД" else "[red]РАСХОД[/red]"
+            # Сортируем по дате (новые сверху) ПЕРЕД добавлением в таблицу
+            self.transactions.sort(key=lambda t: t.date, reverse=True)
+
+            # Добавляем отсортированные данные в таблицу
+            for idx, transaction in enumerate(self.transactions):
+                type_style = "[green]ДОХОД[/green]" if transaction.type_ == "ДОХОД" else "[red]РАСХОД[/red]"
                 table.add_row(
-                    date_str,
-                    name,
-                    f"{amount:,.2f}",
+                    transaction.date,
+                    transaction.name,
+                    f"{transaction.amount:,.2f}",
                     type_style,
-                    key=f"row_{row_idx}"
+                    key=f"row_{idx}"
                 )
 
-            # Сортируем по дате (новые сверху)
-            self.transactions.sort(key=lambda t: t.date, reverse=True)
             self._update_totals()
 
         except Exception as e:
@@ -641,6 +670,17 @@ class KeeperApp(App):
         self.query_one("#income-total", Label).update(f"{income:,.2f}")
         self.query_one("#expense-total", Label).update(f"{expense:,.2f}")
         self.query_one("#balance-total", Label).update(f"{balance:,.2f}")
+        self._update_footer(balance)
+
+    def _update_footer(self, balance: float) -> None:
+        """Обновить кастомный footer"""
+        footer = self.query_one("#custom-footer", Static)
+        balance_str = f"{balance:,.2f}"
+        balance_color = "[green]" if balance >= 0 else "[red]"
+        footer.update(
+            f"n — Новый  |  o — Открыть  |  a — Добавить  |  e — Edit  |  d — Удалить  |  "
+            f"s — Split  |  q — Выход     {balance_color}● Баланс: {balance_str}[/]"
+        )
 
     def _update_file_info(self) -> None:
         """Обновить информацию о текущем файле"""
