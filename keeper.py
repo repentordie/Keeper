@@ -220,7 +220,8 @@ class KeeperApp(App):
     """Основное приложение Keeper"""
 
     TITLE = "KEEPER"
-    SUB_TITLE = "by Unproductive for Comics-Cat"
+    import random
+    SUB_TITLE = random.choice(list(open('splash', 'r', encoding='utf-8'))).strip()
 
     CSS = """
     Screen {
@@ -381,12 +382,19 @@ class KeeperApp(App):
 
     BINDINGS = [
         Binding("q", "quit", "Выход"),
+        Binding("й", "quit", "Выход"),
         Binding("a", "add_transaction", "Добавить"),
+        Binding("ф", "add_transaction", "Добавить"),
         Binding("e", "edit_transaction", "Редактировать"),
+        Binding("у", "edit_transaction", "Редактировать"),
         Binding("d", "delete_transaction", "Удалить"),
+        Binding("в", "delete_transaction", "Удалить"),
         Binding("s", "split_period", "Разделить"),
+        Binding("ы", "split_period", "Разделить"),
         Binding("o", "open_file", "Открыть"),
+        Binding("щ", "open_file", "Открыть"),
         Binding("n", "new_file", "Новый"),
+        Binding("т", "new_file", "Новый"),
        # Binding("j", "cursor_down", "Вниз"),
        # Binding("k", "cursor_up", "Вверх"),
     ]
