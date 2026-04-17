@@ -34,6 +34,36 @@ import openpyxl
 from openpyxl.workbook import Workbook
 from dateutil.parser import parse as parse_date
 
+SPLASH = """потому что я что дурак бля
+потому что эксель слишком много жрёт
+также попробуйте Minecraft!
+также попробуйте WoW!
+также попробуйте Жизнь!
+don't forget the ice!
+GOTY 2026 edition
+теперь на вашей мультиварке!
+теперь на 99% меньше калорий!
+Remastered
+2026 Remake
+теперь со встроенным санузлом!
+теперь на 12% больше отсылок на TBoI!
+работает лучше когда ты смотришь
+знает, но не скажет
+иногда даже правильно!
+не кликай это дважды!
+пожалуйста, только не сегодня
+не моргай!
+это канон
+воркс он май машин
+легаси с рождения
+потому что кто не любит терминал!
+мои глаза полны песка
+REPEEK
+ПРОСНИСЬ ПРОСНИСЬ ПРОСНИСЬ ПРОСНИСЬ ПРОСНИСЬ ПРОСНИСЬ
+Have a Very Safe Day!
+это секрет, который ты обязан скинуть Бортяшу
+теперь на базе нашего нового корпоративного АИ!
+теперь в одном файлике!"""
 
 # Цветовая схема Dracula-inspired
 COLORS = {
@@ -223,8 +253,8 @@ class KeeperApp(App):
     TITLE = "KEEPER"
     import random
     #check if splash exists
-    SUB_TITLE = random.choice(list(open('splash', 'r', encoding='utf-8'))).strip() if os.path.exists('splash') else "Теперь в одном файлике!"
-
+    #SUB_TITLE = random.choice(list(open('splash', 'r', encoding='utf-8'))).strip() if os.path.exists('splash') else "Теперь в одном файлике!"
+    SUB_TITLE = random.choice(SPLASH.splitlines())
     CSS = """
     #type-switch{
         border: solid $surface;
